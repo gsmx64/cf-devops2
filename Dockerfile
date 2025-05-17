@@ -2,7 +2,7 @@ FROM eclipse-temurin:21-jdk-jammy AS base
 WORKDIR /app
 COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
-RUN ./mvnw dependency:resolve
+RUN chmod +x ./mvnw && ./mvnw dependency:resolve
 COPY src ./src
 
 # Instalar el agente OpenTelemetry en base para compartirlo
@@ -14,7 +14,7 @@ FROM base AS development
 # Configura el agente OpenTelemetry y el debugger
 ENV JAVA_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
 ENV JAVA_TOOL_OPTIONS="-javaagent:/opt/opentelemetry-javaagent.jar"
-CMD ["./mvnw", "spring-boot:run", "-Dspring-boot.run.profiles=mysql"]
+CMD ["sh", "./mvnw", "spring-boot:run", "-Dspring-boot.run.profiles=mysql"]
 
 FROM base AS build
 RUN ./mvnw package
