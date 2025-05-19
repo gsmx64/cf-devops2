@@ -1,0 +1,83 @@
+# Petclinic on Kubernetes on cloud providers
+# Petclinic Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: petclinic-prod
+  namespace: petclinic-prod
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: petclinic-prod
+  template:
+    metadata:
+      labels:
+        app: petclinic-prod
+    spec:
+      containers:
+        - name: petclinic-prod
+          image: gsmx64/petclinic:latest
+          env:
+            - name: PORT
+              value: "8080"
+            - name: MYSQL_URL
+              value: "jdbc:mysql://mysqlserver/petclinic"
+            - name: OTEL_TRACES_EXPORTER
+              value: "otlp"
+            - name: OTEL_METRICS_EXPORTER
+              value: "otlp"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://otel:4317"
+            - name: OTEL_SERVICE_NAME
+              value: "petclinic-service"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.name=petclinic-service"
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: "grpc"
+            - name: OTEL_TRACES_SAMPLER
+              value: "parentbased_always_on"
+            - name: MANAGEMENT_SERVER_PORT
+              value: "9464"
+            - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+              value: "prometheus,health,info,metrics"
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 8080
+              name: petclinic-port
+            - containerPort: 8000
+              name: petclinic-port-2
+            - containerPort: 9464
+              name: petclinic-prometheus-metrics
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8080
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
+
+# Petclinic Service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: petclinic-prod-service
+  namespace: petclinic-prod
+spec:
+  selector:
+    app: petclinic-prod
+  type: LoadBalancer
+  ports:
+    - name: "http"
+      port: 80
+      targetPort: 8080
+      protocol: "TCP"

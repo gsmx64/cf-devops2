@@ -1,0 +1,22 @@
+server:
+  additionalApplications:
+   - name: petclinic
+     namespace: petclinic
+     project: petclinic
+     source:
+       repoURL: https://github.com/gsmx64/devpos2
+       targetRevision: HEAD
+       path: kubernetes/manifiestos/prod
+     destination:
+       server: https://kubernetes.default.svc
+       namespace: petclinic
+   - name: petclinic-dev
+     namespace: petclinic-dev
+     project: petclinic-dev
+     source:
+       repoURL: https://github.com/gsmx64/devpos2
+       targetRevision: HEAD
+       path: kubernetes/manifiestos/dev
+     destination:
+       server: https://kubernetes.default.svc
+       namespace: petclinic-dev
