@@ -1,0 +1,84 @@
+# Petclinic on Kubernetes with Baremetal
+# Petclinic Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: petclinic-dev
+  namespace: petclinic-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: petclinic-dev
+  template:
+    metadata:
+      labels:
+        app: petclinic-dev
+    spec:
+      containers:
+        - name: petclinic-dev
+          image: gsmx64/petclinic-dev:latest
+          env:
+            - name: PORT
+              value: "8080"
+            - name: MYSQL_URL
+              value: "jdbc:mysql://mysqlserver/petclinicdev"
+            - name: OTEL_TRACES_EXPORTER
+              value: "otlp"
+            - name: OTEL_METRICS_EXPORTER
+              value: "otlp"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://otel:4317"
+            - name: OTEL_SERVICE_NAME
+              value: "petclinic-service"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.name=petclinic-service"
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: "grpc"
+            - name: OTEL_TRACES_SAMPLER
+              value: "parentbased_always_on"
+            - name: MANAGEMENT_SERVER_PORT
+              value: "9464"
+            - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+              value: "prometheus,health,info,metrics"
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 8080
+              name: petclinic-port
+            - containerPort: 8000
+              name: petclinic-port-2
+            - containerPort: 9464
+              name: petclinic-prometheus-metrics
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8080
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
+
+# Petclinic Service - NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: petclinic-dev-service
+  namespace: petclinic-dev
+spec:
+  selector:
+    app: petclinic-dev
+  type: NodePort
+  ports:
+    - name: "http"
+      port: 8080
+      targetPort: 8080
+      protocol: "TCP"
+      nodePort: 30002

@@ -6,13 +6,13 @@ services:
     image: otel/opentelemetry-collector-contrib:latest
     command: [--config=/etc/otel-collector-config.yaml]
     volumes:
-      - ./tools/otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - ./monitoring/otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml
     ports:
       - '13133:13133' # health_check extension
       - '8888:8888' # Prometheus metrics exposed by the collector
       - '8889:8889' # Prometheus exporter metrics
     networks:
-      - monitor
+      - petclinic
     depends_on:
       - jaeger
       - prometheus
@@ -34,8 +34,8 @@ services:
   prometheus:
     image: prom/prometheus:latest
     volumes:
-      - ./tools/prometheus/prometheus.yaml:/etc/prometheus.yaml
-      - "./tools/prometheus/rules.yml:/etc/prometheus/rules.yml"
+      - ./monitoring/prometheus/prometheus.yaml:/etc/prometheus.yaml
+      - "./monitoring/prometheus/rules.yml:/etc/prometheus/rules.yml"
       - prometheus-data:/prometheus
     command:
       - --web.enable-lifecycle
@@ -45,7 +45,7 @@ services:
     ports:
       - '9090:9090' # UI
     networks:
-      - monitor
+      - petclinic
 
 
 volumes:
@@ -55,4 +55,4 @@ volumes:
 
 
 networks:
-  monitor:
+  petclinic:
